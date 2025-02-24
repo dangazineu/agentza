@@ -2,7 +2,6 @@ package ai.agentza.rest;
 
 import ai.agentza.model.Wallet;
 import ai.agentza.model.WalletRepository;
-import ai.agentza.model.payee.Payee;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -45,6 +44,7 @@ public class WalletController {
                         UUID.randomUUID().toString(),
                         principal.getName(),
                         description,
+                        "USD",
                         0.0
                 )
         );

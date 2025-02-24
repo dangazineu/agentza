@@ -1,22 +1,22 @@
 package ai.agentza.model;
 
-import ai.agentza.model.payee.Payee;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 public class Wallet {
     @Id private String walletId;
     private String agentId;
     private String description;
+    private String currency;
     private Double balance;
 
     protected Wallet() {}
-    public Wallet(String walletId, String agentId, String description, Double balance) {
+    public Wallet(String walletId, String agentId, String description, String currency, Double balance) {
         this.walletId = walletId;
         this.agentId = agentId;
         this.description = description;
+        this.currency = currency;
         this.balance = balance;
     }
 
@@ -34,6 +34,10 @@ public class Wallet {
         return agentId;
     }
 
+    public String getCurrency() {
+        return currency;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -44,5 +48,9 @@ public class Wallet {
 
     public String getWalletId() {
         return walletId;
+    }
+
+    public void setBalance(double v) {
+        this.balance = v;
     }
 }

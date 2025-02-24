@@ -23,6 +23,7 @@ Swagger UI is also available at`http://localhost:8080/api/browser`
 The application comes with a series of agents pre-registered. Each agent has a pre-configured API Key `agent-${AGENT}-key`. 
 i.e: The API key for agent `foo` is `agent-foo-key`.
 
+## Payees
 Lists all payees registered for the agent `foo`
 ```shell
 curl -s -X 'GET' \
@@ -68,3 +69,42 @@ Example output:
 }
 ```
 Now running the previous command will include an additional entry in the list.
+
+## Wallets
+
+Lists all wallets registered for the agent `foo`
+```shell
+curl -s -X 'GET' \
+  'http://localhost:8080/api/v1/wallets/' \
+  -H 'X-API-KEY: agent-foo-key' \
+  | jq
+```
+
+Create a new wallet for the agent `foo`
+```shell
+curl -s -X 'POST' \
+  'http://localhost:8080/api/v1/wallets/' \
+  -H 'Content-Type: application/json' \
+  -d 'another wallet' \
+  -H 'X-API-KEY: agent-foo-key' \
+  | jq
+```
+
+## Transactions
+To make a transaction from the agent `foo` to one of its payees, use the following command, replacing `$PAYEE_ID` with the one you want to use. 
+```shell
+curl -s -X 'POST' \
+  'http://localhost:8080/api/v1/wallets/foo-default-wallet/transactions' \
+  -H 'accept: */*' \
+  -H 'X-API-KEY: agent-foo-key' \
+  -H 'Content-Type: application/json' \
+  -d '{ "payeeId": "$PAYEE_ID", "amount": 200 }'
+```
+
+You can then list the transactions for the `foo-default-wallet` to see the updated balance.
+```shell
+curl -X 'GET' \
+  'http://localhost:8080/api/v1/wallets/foo-default-wallet/transactions' \
+  -H 'X-API-KEY: agent-foo-key' \
+  | jq
+```

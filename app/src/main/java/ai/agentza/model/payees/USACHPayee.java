@@ -1,4 +1,4 @@
-package ai.agentza.model.payee;
+package ai.agentza.model.payees;
 
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;

@@ -1,4 +1,4 @@
-package ai.agentza.model.payee;
+package ai.agentza.model.payees;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

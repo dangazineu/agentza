@@ -1,4 +1,4 @@
-package ai.agentza.model.payee;
+package ai.agentza.model.payees;
 
 import org.springframework.data.repository.CrudRepository;
 

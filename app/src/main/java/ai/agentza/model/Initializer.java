@@ -1,9 +1,8 @@
 package ai.agentza.model;
 
-import ai.agentza.model.payee.AgentPayee;
-import ai.agentza.model.payee.PayeeRepository;
-import ai.agentza.model.payee.USACHPayee;
-import org.springframework.beans.factory.annotation.Autowired;
+import ai.agentza.model.payees.AgentPayee;
+import ai.agentza.model.payees.PayeeRepository;
+import ai.agentza.model.payees.USACHPayee;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -32,7 +31,7 @@ public class Initializer {
 
         for (String agentId : agentIds) {
             Agent agent = agentRepository.save(new Agent(agentId, "Agent " + agentId.toUpperCase(), null));
-            Wallet wallet = walletRepository.save(new Wallet(agentId + "-default-wallet", agentId, "Default wallet for " + agent.getName(), 1000.0));
+            Wallet wallet = walletRepository.save(new Wallet(agentId + "-default-wallet", agentId, "Default wallet for " + agent.getName(), "USD",1000.0));
 
             agent.setDefaultWalletId(wallet.getWalletId());
             agentRepository.save(agent);

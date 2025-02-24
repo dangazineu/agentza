@@ -2,10 +2,10 @@ package ai.agentza.rest;
 
 import ai.agentza.model.Agent;
 import ai.agentza.model.AgentRepository;
-import ai.agentza.model.payee.AgentPayee;
-import ai.agentza.model.payee.Payee;
-import ai.agentza.model.payee.PayeeRepository;
-import ai.agentza.model.payee.USACHPayee;
+import ai.agentza.model.payees.AgentPayee;
+import ai.agentza.model.payees.Payee;
+import ai.agentza.model.payees.PayeeRepository;
+import ai.agentza.model.payees.USACHPayee;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
