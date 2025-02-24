@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 @RestController
@@ -44,38 +43,23 @@ public class TransactionController {
     ) {
         var wallet = walletRepository.findById(walletId).orElseThrow();
         if (!wallet.getAgentId().equals(principal.getName())) {
-            // TODO implement this as a filter in the repository
+            // TODO better error types and messages
             throw new RuntimeException("Unauthorized");
         }
 
-        return StreamSupport.stream(transactionRepository.findByWalletId(walletId).spliterator(), false).map(transaction -> {
-            System.out.println("Transaction: " + transaction);
-            if (transaction instanceof Deposit deposit) {
-                return new TransactionResponse(
-                        deposit.getTransactionId(),
-                        deposit.getTimestamp(),
-                        deposit.getWalletId(),
-                        deposit.getAmount(),
-                        deposit.getCurrency(),
-                        deposit.getStatus(),
-                        "DEPOSIT",
-                        deposit.getPayerDescription()
-                );
-            } else if (transaction instanceof Withdrawal withdrawal) {
-                return new TransactionResponse(
-                        withdrawal.getTransactionId(),
-                        withdrawal.getTimestamp(),
-                        withdrawal.getWalletId(),
-                        withdrawal.getAmount(),
-                        withdrawal.getCurrency(),
-                        withdrawal.getStatus(),
-                        "WITHDRAWAL",
-                        withdrawal.getPayeeId()
-                );
-            } else {
-                throw new RuntimeException("Unsupported transaction type");
-            }
-        }).toList();
+        return StreamSupport.stream(transactionRepository.findByWalletId(walletId).spliterator(), false).map(transaction ->
+             new TransactionResponse(
+                    transaction.getTransactionId(),
+                    transaction.getTimestamp(),
+                    transaction.getWalletId(),
+                    transaction.getAmount(),
+                    transaction.getCurrency(),
+                    transaction.getStatus(),
+                    (transaction instanceof Deposit) ?  "DEPOSIT" : "WITHDRAWAL",
+                    (transaction instanceof Deposit )? ((Deposit) transaction).getPayerDescription() : null,
+                    (transaction instanceof Withdrawal)? ((Withdrawal) transaction).getPayeeId() : null
+                    )
+        ).toList();
     }
 
     @PostMapping("/wallets/{walletId}/transactions")
@@ -147,6 +131,7 @@ public class TransactionController {
                     withdrawal.getCurrency(),
                     withdrawal.getStatus(),
                     "WITHDRAWAL",
+                    null,
                     withdrawal.getPayeeId()
             );
         } else {
@@ -155,5 +140,5 @@ public class TransactionController {
     }
 
     public record TransactionRequest (String payeeId, Double amount){}
-    public record TransactionResponse (String transactionId, LocalDateTime timestamp, String walletId, Double amount, String currency, Transaction.TransactionStatus status, String type, String payeeId){}
+    public record TransactionResponse (String transactionId, LocalDateTime timestamp, String walletId, Double amount, String currency, Transaction.TransactionStatus status, String type, String payerDescription, String payeeId){}
 }

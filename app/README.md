@@ -98,12 +98,23 @@ curl -s -X 'POST' \
   -H 'accept: */*' \
   -H 'X-API-KEY: agent-foo-key' \
   -H 'Content-Type: application/json' \
-  -d '{ "payeeId": "$PAYEE_ID", "amount": 200 }'
+  -d '{ "payeeId": $PAYEE_ID, "amount": 200 }'
+```
+
+The command below finds the `payeeId` for the first agent payee registered for the agent `foo` and puts that into an environment variable `$PAYEE_ID` to be used in the transaction.
+```shell
+export PAYEE_ID="$(curl -s -X 'GET' 'http://localhost:8080/api/v1/payees/' -H 'X-API-KEY: agent-foo-key' | jq '[.[]|select(.type=="AGENT")][0]'.payeeId)" && \
+curl -s -X 'POST' \
+  'http://localhost:8080/api/v1/wallets/foo-default-wallet/transactions' \
+  -H 'accept: */*' \
+  -H 'X-API-KEY: agent-foo-key' \
+  -H 'Content-Type: application/json' \
+  -d '{ "payeeId": '$PAYEE_ID', "amount": 200 }'
 ```
 
 You can then list the transactions for the `foo-default-wallet` to see the updated balance.
 ```shell
-curl -X 'GET' \
+curl -s -X 'GET' \
   'http://localhost:8080/api/v1/wallets/foo-default-wallet/transactions' \
   -H 'X-API-KEY: agent-foo-key' \
   | jq
