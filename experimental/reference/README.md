@@ -4,16 +4,13 @@ This repository demonstrates how microledgers can facilitate secure, peer-to-pee
 
 ## Repository Structure
 
-- **/infrastructure**
+- **infra/**
   Contains Java-based Spring Boot services:
   - **identity-registry:** Manages application identities.
   - **bank:** Handles customer accounts and escrow transactions.
-
-- **/common**
-  Contains common modules:
   - **microledger:** A reference implementation of an immutable, verifiable microledger.
 
-- **/demo**
+- **demo/**
   Demonstration applications implemented across different languages:
   - **sleeper (Node.js):** Offers sleep/delay services.
   - **greeter (Golang):** Provides greeting and farewell endpoints.
