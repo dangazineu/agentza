@@ -19,4 +19,4 @@ This repository demonstrates how microledgers can facilitate secure, peer-to-pee
   - **greeter (Golang):** Provides greeting and farewell endpoints.
   - **agent (Python):** Orchestrates service calls based on parsed natural-language instructions.
 
-For an in-depth overview of the project and detailed specifications for each component, please see [Project Overview](/docs/Project-Overview.md).
+For an in-depth overview of the project and detailed specifications for each component, please see [Project Overview](Project-Overview.md).
