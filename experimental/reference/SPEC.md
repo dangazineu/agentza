@@ -132,7 +132,7 @@ Additionally, the Bank maintains its own key pair. Upon startup, the Bank regist
 
 2. **Create Escrow**
 
-An escrow account is used as proof-of-funds when the account owner attempts to perform a paid transaction with the recipient.
+   An escrow account is used as proof-of-funds when the account owner attempts to perform a paid transaction with the recipient.
 
    - **HTTP Method & URL:**
      ```
@@ -163,13 +163,43 @@ An escrow account is used as proof-of-funds when the account owner attempts to p
 
    - **Response:**
      - Return an HTTP 201 Created response that includes the details of the escrow transaction.
-     - The response body should encapsulate a genesis block for a microledger maintained by the account owner. This block must contain a Seal attachment (i.e., the hash of the escrow account information) and be signed using the Bank’s private key.
+     - The response body should be a JSON representation of the escrow account.
+     - The response should include a header `X-Proof-of-Funds` that is the base64 encoded genesis block for a microledger maintained by the account owner. This block must must contain a Seal that is the hash of the escrow account info, and be signed using the Bank’s private key.
 
    - **Response Body (JSON):**
-  <!-- TODO: Add json response body to every request in this doc -->
 ```json
-   /* TODO */
+     /* TODO */
 ```
+   - **Decoded Response Header:**
+The decoded value of the `X-Proof-of-Funds` response header should look as follows
+     ```json
+     {
+         "blockNumber": 1,
+         "previousBlockHash": "",
+         "digitalFingerprint": "<computed hash>",
+         "timeImprint": "<ISO-8601 timestamp>",
+         "controllingIdentifiers": [
+           {
+             "identifierType": "bank",
+             "identifierValue": "bank",
+             "publicKey": "<bank_public_key>"
+           }
+         ],
+         "seals": [
+           {
+             "sealType": "SHA-256",
+             "sealValue": "<hash of escrow account info>"
+           }
+         ],
+         "signatures": [
+           {
+             "algorithm": "RSA",
+             "value": "<bank signature>"
+           }
+         ]
+       }
+     ```
+     LLM: Please confirm if this response structure meets your requirements for the escrow creation response body.
 
    - **Error Responses:**
      - **400 Bad Request:** For an invalid request body.
@@ -227,7 +257,7 @@ Sleeper is a Node.js REST application offering a sleep/delay service that charge
   - `time` (required): The number of seconds the application should delay the response.
 
 - **Behavior:**
-  - Apply the standard payee processing behavior (validate payment headers, microledger operations, etc.).
+  - Apply the standard payee processing behavior (validate payment headers, perform microledger operations, etc.).
   - Delay the response for the specified number of seconds.
   - Charge the caller $1 per second of delay.
   - Return a response indicating the duration of the sleep and the fee that was deducted.
@@ -265,7 +295,7 @@ Greeter is a Golang REST application offering greeting services. It provides two
      - `name` (required): The text or name to greet.
 
    - **Behavior:**
-     - Apply the standard payee processing behavior (validate payment headers, microledger operations, etc.).
+     - Apply the standard payee processing behavior (validate payment headers, perform microledger operations, etc.).
      - Return a greeting (e.g., “Hello, {name}!”).
      - Charge $1 per character in the provided name.
      - Follow the standard payee validation and microledger operations.
@@ -289,7 +319,7 @@ Greeter is a Golang REST application offering greeting services. It provides two
      - `name` (required): The text or name for the farewell message.
 
    - **Behavior:**
-     - Apply the standard payee processing behavior (validate payment headers, microledger operations, etc.).
+     - Apply the standard payee processing behavior (validate payment headers, perform microledger operations, etc.).
      - Return a farewell message (e.g., “Goodbye, {name}!”).
      - Charge $1 per character in the provided name.
      - Perform standard payee validation and microledger operations.
