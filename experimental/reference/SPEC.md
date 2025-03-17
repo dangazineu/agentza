@@ -7,7 +7,7 @@ This repository is organized into high-level domains that clearly separate the c
 The project demonstrates how microledgers facilitate secure, verifiable, peer-to-peer payments. It is divided into the following categories:
 
 1. **Infrastructure Applications** (Java Spring Boot):
-   - **Identity Registry:** Maintains an in-memory mapping of application names to their public keys and registration timestamps using a trust-on-first-use pattern. (See infra/identity-registry/SPEC.md)
+   - **Identity Registry:** Maintains an in-memory mapping of application names to their public keys and registration timestamps using a trust-on-first-use pattern. (See [spec](infra/identity-registry/SPEC.md))
    - **Bank:** Manages customer accounts and escrow transactions (with its own key pair). Before any transaction, the Bank registers itself under the name `"bank"` in the Identity Registry. (See [spec](infra/bank/SPEC.md))
 
 2. **Common Components:**
@@ -15,7 +15,7 @@ The project demonstrates how microledgers facilitate secure, verifiable, peer-to
 
 3. **Demo Applications:**
    - **Sleeper (Node.js):** A payee service that offers a sleep/delay API. It charges the caller $1 per second of delay and processes payment headers and microledger operations. (See [spec](demo/sleeper/SPEC.md))
-   - **Greeter (Golang):** A payee service that provides greeting and farewell endpoints, charging $1 per character of the provided name. (See demo/greeter/SPEC.md)
+   - **Greeter (Golang):** A payee service that provides greeting and farewell endpoints, charging $1 per character of the provided name. (See [spec](demo/greeter/SPEC.md))
    - **Agent (Python):** A payer application that leverages LangChain and OpenAI to parse a single instruction string into actionable steps. It dynamically invokes the Sleeper or Greeter endpoints as required, ensuring escrow account initialization and the correct payment header handling. (See [spec](demo/agent/SPEC.md))
 
 ## Non Functional Requirements
