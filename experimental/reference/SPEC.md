@@ -84,7 +84,7 @@ This service maintains an in-memory mapping from application names to their publ
 
 The Bank application manages an in-memory ledger tracking customer accounts and escrow transactions. Customer accounts are linked to demo application identities as registered in the Identity Registry.
 
-Additionally, the Bank maintains its own key pair. Upon startup, the Bank registers itself (with the name `"bank"`) with the Identity Registry.
+Additionally, the Bank maintains its own key pair. Upon startup, the Bank must register itself (with the name `"bank"`) with the Identity Registry.
 
 #### Endpoints
 
@@ -164,42 +164,51 @@ Additionally, the Bank maintains its own key pair. Upon startup, the Bank regist
    - **Response:**
      - Return an HTTP 201 Created response that includes the details of the escrow transaction.
      - The response body should be a JSON representation of the escrow account.
-     - The response should include a header `X-Proof-of-Funds` that is the base64 encoded genesis block for a microledger maintained by the account owner. This block must must contain a Seal that is the hash of the escrow account info, and be signed using the Bank’s private key.
+     - The response must include a header `X-Proof-of-Funds` that is the base64 encoded genesis block for a microledger maintained by the account owner. This block must contain a Seal that is the hash of the escrow account info and be signed using the Bank’s private key.
 
    - **Response Body (JSON):**
-```json
-     /* TODO */
-```
-   - **Decoded Response Header:**
-The decoded value of the `X-Proof-of-Funds` response header should look as follows
      ```json
      {
-         "blockNumber": 1,
-         "previousBlockHash": "",
-         "digitalFingerprint": "<computed hash>",
-         "timeImprint": "<ISO-8601 timestamp>",
-         "controllingIdentifiers": [
-           {
-             "identifierType": "bank",
-             "identifierValue": "bank",
-             "publicKey": "<bank_public_key>"
-           }
-         ],
-         "seals": [
-           {
-             "sealType": "SHA-256",
-             "sealValue": "<hash of escrow account info>"
-           }
-         ],
-         "signatures": [
-           {
-             "algorithm": "RSA",
-             "value": "<bank signature>"
-           }
-         ]
-       }
+       "escrowId": "randomly generated UUID",
+       "sender": "{ID}",
+       "recipient": "{RECIPIENT}",
+       "amount": 10,
+       "createdAt": "ISO-8601 timestamp",
+       "activeDurationInSeconds": 30,
+       "expirationInSeconds": 10,
+       "status": "active"
+     }
      ```
-     LLM: Please confirm if this response structure meets your requirements for the escrow creation response body.
+
+   - **Decoded Response Header:**
+     The decoded value of the `X-Proof-of-Funds` header should look as follows:
+     ```json
+     {
+       "blockNumber": 1,
+       "previousBlockHash": "",
+       "digitalFingerprint": "<computed hash>",
+       "timeImprint": "<ISO-8601 timestamp>",
+       "controllingIdentifiers": [
+         {
+           "identifierType": "bank",
+           "identifierValue": "bank",
+           "publicKey": "<bank_public_key>"
+         }
+       ],
+       "seals": [
+         {
+           "sealType": "SHA-256",
+           "sealValue": "<hash of escrow account info>"
+         }
+       ],
+       "signatures": [
+         {
+           "algorithm": "RSA",
+           "value": "<bank signature>"
+         }
+       ]
+     }
+     ```
 
    - **Error Responses:**
      - **400 Bad Request:** For an invalid request body.
@@ -218,24 +227,29 @@ Demo applications are implemented in various programming languages (Node.js, Gol
 
 ### Payees
 
-Payee applications provide services that require payment. Each incoming API call with a fee includes a set of standardized headers and operations to secure funds:
+Payee applications provide services that require payment. Each incoming API call that carries a fee must include a set of standardized headers and implement operations to secure funds.
 
 **Mandatory HTTP Headers for Paid APIs:**
 
-- **X-Proof-of-Funds:** A header carrying a base64 encoded representation of the genesis block from the caller’s escrow account microledger.
-- **X-Allowance:** A numeric header representing the maximum amount the callee is allowed to charge.
-- **X-Seal:** A one-way hash of the request body; this value is used to prepare the subsequent microledger block.
-- **X-Signature:** The cryptographic signature produced by the caller over the new block to be added.
+- **`X-Proof-of-Funds`:** A base64 encoded representation of the Genesis Block from the caller’s escrow account microledger. This Block should include a Seal Attachment element with the original escrow account information, so it can be parsed and validated by the callee.
+
+TODO: demonstrate the decoded header
+
+- **`X-Allowance`:** A base64 encoded Block representing the maximum amount the callee is allowed to charge for this request. This Block must include a Seal Attachment element with an unencoded `allowance` JSON object. This Block must be signed by the caller.
+
+TODO: demonstrate the decoded header
 
 **Behavior for Paid API Calls:**
 
 - Include proof-of-funds (the escrow account’s genesis block).
-- Validate that the escrow account remains active (i.e., the `activeDurationInSeconds` window has not elapsed).
-- Confirm that the block fingerprint matches the block content and that the signature is correct using the Bank’s public key (retrieved from the Identity Registry).
-- Verify the caller’s signature.
+- Validate that the Block conforms to the microledger specification (validate fingerprints and signatures)
+- Validate that the escrow account remains active (i.e., the `activeDurationInSeconds` window has not expired).
 - Either create or locate a local in-memory microledger representing the transaction history between the caller and callee within the current microledger represented by the proof-of-funds.
 - Ensure that the `X-Allowance` header value does not exceed the current ledger balance.
-- On successful processing, the response should include a new block containing the actual fee charged. This block must be signed by the callee.
+- Ensure that the `X-Allowance` header is the next logical block in the local representation of the microledger (block numbers matches last block + 1)
+- Upon successful processing, the response should include a header named `X-Fee`. This header is a Block including a Seal Attachment with a `fee` object representing how much was spent. It should also include a Seal with the hash of the actual response.
+- If the request suceeds, the callee appends the `X-Allowance` block to the end of the local microledger, followed by the `X-Fee` block. The caller does the same.
+- Subsequent requests between the same caller and callee will only include the original genesis block (`X-Proof-of-Funds`) and the latest `X-Allowance` (in the request) and `X-Fee` (in the response). It is up to the caller anc callee to maintain their own representation of the microledger and ensure it remains valid.
 
 ---
 
@@ -426,6 +440,8 @@ When transferring ownership:
 ### Reference Implementation in Java
 
 The following reference implementation in Java should serve as the canonical guide. Implementations in other languages must match its behavior and structure as closely as possible. Any differences must be clearly noted in the code comments.
+
+TODO add Seal Attachments to the reference implementation
 
 #### File: io.agentza.microledger.model.Block
 
