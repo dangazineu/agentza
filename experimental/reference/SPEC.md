@@ -181,34 +181,35 @@ Additionally, the Bank maintains its own key pair. Upon startup, the Bank must r
      ```
 
    - **Decoded Response Header:**
+
      The decoded value of the `X-Proof-of-Funds` header should look as follows:
-     ```json
-     {
-       "blockNumber": 1,
-       "previousBlockHash": "",
-       "digitalFingerprint": "<computed hash>",
-       "timeImprint": "<ISO-8601 timestamp>",
-       "controllingIdentifiers": [
-         {
-           "identifierType": "bank",
-           "identifierValue": "bank",
-           "publicKey": "<bank_public_key>"
-         }
-       ],
-       "seals": [
-         {
-           "sealType": "SHA-256",
-           "sealValue": "<hash of escrow account info>"
-         }
-       ],
-       "signatures": [
-         {
-           "algorithm": "RSA",
-           "value": "<bank signature>"
-         }
-       ]
-     }
-     ```
+       ```json
+       {
+         "blockNumber": 1,
+         "previousBlockHash": "",
+         "digitalFingerprint": "<computed hash>",
+         "timeImprint": "<ISO-8601 timestamp>",
+         "controllingIdentifiers": [
+           {
+             "identifierType": "bank",
+             "identifierValue": "bank",
+             "publicKey": "<bank_public_key>"
+           }
+         ],
+         "seals": [
+           {
+             "sealType": "SHA-256",
+             "sealValue": "<hash of escrow account info>"
+           }
+         ],
+         "signatures": [
+           {
+             "algorithm": "RSA",
+             "value": "<bank signature>"
+           }
+         ]
+       }
+       ```
 
    - **Error Responses:**
      - **400 Bad Request:** For an invalid request body.
@@ -232,25 +233,61 @@ Payee applications provide services that require payment. Each incoming API call
 **Mandatory HTTP Headers for Paid APIs:**
 
 - **`X-Proof-of-Funds`:** A base64 encoded representation of the Genesis Block from the caller’s escrow account microledger. This Block should include a Seal Attachment element with the original escrow account information, so it can be parsed and validated by the callee.
-
-TODO: demonstrate the decoded header
+  *Decoded Example:* (see section under Bank: Create Escrow)
 
 - **`X-Allowance`:** A base64 encoded Block representing the maximum amount the callee is allowed to charge for this request. This Block must include a Seal Attachment element with an unencoded `allowance` JSON object. This Block must be signed by the caller.
+  *Decoded Example:*
 
-TODO: demonstrate the decoded header
+       ```json
+       {
+         "blockNumber": 2,
+         "previousBlockHash": "<computed hash from previous block>",
+         "digitalFingerprint": "<computed hash>",
+         "timeImprint": "<ISO-8601 timestamp>",
+         "seals": [
+           {
+             "sealType": "SHA-256",
+             "sealValue": "<hash computed over the allowance payload>"
+           }
+         ],
+         "signatures": [
+           {
+             "algorithm": "RSA",
+             "value": "<caller signature>"
+           }
+         ],
+        "sealAttachments": [
+          {
+            "name": "allowance",
+            "value": "base64 encoded Allowance JSON object"
+          }
+        ]
+       }
+       ```
+     - Example `Allowance` JSON object
+     ```json
+        {
+           "maxCharge": 10,
+           "currency": "USD"
+         }
+     ```
 
 **Behavior for Paid API Calls:**
 
 - Include proof-of-funds (the escrow account’s genesis block).
-- Validate that the Block conforms to the microledger specification (validate fingerprints and signatures)
+- Validate that the Block conforms to the microledger specification (validate digital fingerprints and signatures).
 - Validate that the escrow account remains active (i.e., the `activeDurationInSeconds` window has not expired).
 - Either create or locate a local in-memory microledger representing the transaction history between the caller and callee within the current microledger represented by the proof-of-funds.
 - Ensure that the `X-Allowance` header value does not exceed the current ledger balance.
-- Ensure that the `X-Allowance` header is the next logical block in the local representation of the microledger (block numbers matches last block + 1)
+- Ensure that the `X-Allowance` header is the next logical block in the local representation of the microledger (block number matches last block + 1).
 - Upon successful processing, the response should include a header named `X-Fee`. This header is a Block including a Seal Attachment with a `fee` object representing how much was spent. It should also include a Seal with the hash of the actual response.
-- If the request suceeds, the callee appends the `X-Allowance` block to the end of the local microledger, followed by the `X-Fee` block. The caller does the same.
-- Subsequent requests between the same caller and callee will only include the original genesis block (`X-Proof-of-Funds`) and the latest `X-Allowance` (in the request) and `X-Fee` (in the response). It is up to the caller anc callee to maintain their own representation of the microledger and ensure it remains valid.
+- If the request succeeds, the callee appends the `X-Allowance` block to the end of the local microledger, followed by the `X-Fee` block. The caller does the same.
+- Subsequent requests between the same caller and callee will only include the original genesis block (`X-Proof-of-Funds`) and the latest `X-Allowance` (in the request) and `X-Fee` (in the response). It is up to the caller and callee to maintain their own representation of the microledger and ensure it remains valid.
 
+- **Decoded Response Header Examples:**
+
+     - For `X-Allowance` the decoded value example should be:
+    TODO document the fee header, as well as the fee json object in the same way that the allowance header was documented.
 ---
 
 ### Sleeper
@@ -441,8 +478,6 @@ When transferring ownership:
 
 The following reference implementation in Java should serve as the canonical guide. Implementations in other languages must match its behavior and structure as closely as possible. Any differences must be clearly noted in the code comments.
 
-TODO add Seal Attachments to the reference implementation
-
 #### File: io.agentza.microledger.model.Block
 
 ```java
@@ -545,6 +580,17 @@ public class Seal {
     }
 
     // Getters and setters...
+}
+```
+
+#### File: io.agentza.microledger.model.SealAttachment
+
+```java
+package io.agentza.microledger.model;
+
+public class SealAttachment {
+
+    // TODO Implement this class
 }
 ```
 
