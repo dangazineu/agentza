@@ -3,14 +3,15 @@
 This project requires building a series of interconnected applications that demonstrate how microledgers can facilitate peer-to-peer payments. There are two key categories of applications:
 
 - **Infrastructure:** The core building blocks that define the architecture.
-- **Ecosystem:** Applications that use the infrastructure services to perform transactions with one another for demonstration purposes.
+- **Demo:** Applications that use the infrastructure services to perform transactions with one another for demonstration purposes.
 
 Each application must rigorously adhere to the specifications outlined below. Any deviation must be explicitly documented within the source code using clear comments.
 
 ---
+
 # Non Functional Requirements
 
-This is a demo application, and it is Ok that every component described here uses in-memory databases and datastructures instead of real-world production ready persistence.
+This is a demo application, and it is acceptable for every component described here to use in-memory databases and data structures instead of production-ready persistence.
 
 ---
 
@@ -22,7 +23,7 @@ Both applications in this category are implemented as Java REST applications usi
 
 ### Identity Registry
 
-This service maintains an in-memory mapping from application names to their public keys, along with the time of registration. It follows a "trust-on-first-use" pattern, as in the ability to validate the signature with the newly provided public key is enough to establish trust with the caller.
+This service maintains an in-memory mapping from application names to their public keys along with the time of registration. It follows a "trust-on-first-use" pattern, meaning that validating the signature with the provided public key during the first use is sufficient to establish trust with the caller.
 
 #### Endpoints
 
@@ -35,7 +36,7 @@ This service maintains an in-memory mapping from application names to their publ
      where `{ID}` is the application’s unique name.
 
    - **Request Headers:**
-     - `X-Signature`: A cryptographic signature of the `timestamp` generated with the application’s private key.
+     - `X-Signature`: A cryptographic signature of the `timestamp`, generated with the application’s private key.
 
    - **Request Body (JSON):**
      ```json
@@ -49,12 +50,11 @@ This service maintains an in-memory mapping from application names to their publ
      - Verify that the provided timestamp is recent (no older than one minute).
      - Validate the `X-Signature` header by checking the signature against the timestamp using the supplied public key.
      - If successful, store or update the mapping between `{ID}`, the public key, and the registration timestamp.
-     - Return an HTTP 201 Created upon successful registration, or 204 updated if the registration already existed.
+     - Return an HTTP 201 Created upon successful registration.
 
    - **Error Responses:**
      - **400 Bad Request:** If the timestamp is invalid or improperly formatted.
      - **401 Unauthorized:** If the signature verification fails.
-
 
 2. **Get Identity**
 
@@ -82,9 +82,9 @@ This service maintains an in-memory mapping from application names to their publ
 
 ### Bank
 
-The Bank application manages an in-memory ledger tracking customer accounts and escrow transactions. Customer accounts are linked to ecosystem application identities as registered in the Identity Registry.
+The Bank application manages an in-memory ledger tracking customer accounts and escrow transactions. Customer accounts are linked to demo application identities as registered in the Identity Registry.
 
-Additionally, the Bank maintains its own key pair. Upon starting, the Bank registers itself (with the name “bank”) with the Identity Registry.
+Additionally, the Bank maintains its own key pair. Upon startup, the Bank registers itself (with the name `"bank"`) with the Identity Registry.
 
 #### Endpoints
 
@@ -94,7 +94,7 @@ Additionally, the Bank maintains its own key pair. Upon starting, the Bank regis
      ```
      PUT /customers/{ID}/account
      ```
-     where `{ID}` corresponds to the ecosystem application's name.
+     where `{ID}` corresponds to the demo application's name.
 
    - **Request Headers:**
      - `X-Signature`: A digital signature over the request body, created using the application’s private key.
@@ -105,7 +105,7 @@ Additionally, the Bank maintains its own key pair. Upon starting, the Bank regis
        "initialBalance": 100
      }
      ```
-     Note: The initial balance should always be a positive numeric value. By default, each ecosystem application begins with an account balance of $100.
+     Note: The initial balance should always be a positive numeric value. By default, each demo application begins with an account balance of 100 (interpreted as $100).
 
    - **Behavior:**
      - Ensure that no account already exists for `{ID}`.
@@ -115,9 +115,14 @@ Additionally, the Bank maintains its own key pair. Upon starting, the Bank regis
 
    - **Response:**
      - Return an HTTP 201 Created with the account details in the response body.
- - **Response Body (JSON):**
+
+   - **Response Body (JSON):**
      ```json
-      /* TODO */
+     {
+       "owner": "{ID}",
+       "balance": 100,
+       "createdAt": "ISO-8601 timestamp of account creation"
+     }
      ```
 
    - **Error Responses:**
@@ -126,6 +131,8 @@ Additionally, the Bank maintains its own key pair. Upon starting, the Bank regis
      - **409 Conflict:** If an account for `{ID}` already exists.
 
 2. **Create Escrow**
+
+An escrow account is used as proof-of-funds when the account owner attempts to perform a paid transaction with the recipient.
 
    - **HTTP Method & URL:**
      ```
@@ -144,19 +151,25 @@ Additionally, the Bank maintains its own key pair. Upon starting, the Bank regis
        "expirationInSeconds": 10
      }
      ```
-     Here, `{RECIPIENT}` is the name of another ecosystem application registered in the Identity Registry. This endpoint initiates an escrow by deducting the specified `amount` from the sender’s account balance.
+     Here, `{RECIPIENT}` is the name of another demo application registered in the Identity Registry. This endpoint initializes an escrow account by deducting the specified `amount` from the sender’s account balance.
 
    - **Behavior:**
      - Confirm that an account exists for the sender (`{ID}`).
      - Verify that the sender’s account has sufficient funds.
      - Validate that the recipient exists in the Identity Registry.
-     - Check that both `activeDurationInSeconds` and `expirationInSeconds` are positive numbers.
+     - Ensure that both `activeDurationInSeconds` and `expirationInSeconds` are positive numbers.
      - Deduct the escrow `amount` from the sender’s account and record the escrow transaction.
      - Schedule a task that, after a delay calculated as `activeDurationInSeconds` + `expirationInSeconds`, returns any remaining funds from the escrow account back to the sender’s account.
 
    - **Response:**
      - Return an HTTP 201 Created response that includes the details of the escrow transaction.
-     - The response body should encapsulate a genesis block for a microledger to be maintained by the account owner. This block must contain a Seal attachment (i.e., the hash of the escrow account information) and be signed using the Bank’s private key.
+     - The response body should encapsulate a genesis block for a microledger maintained by the account owner. This block must contain a Seal attachment (i.e., the hash of the escrow account information) and be signed using the Bank’s private key.
+
+   - **Response Body (JSON):**
+  <!-- TODO: Add json response body to every request in this doc -->
+```json
+   /* TODO */
+```
 
    - **Error Responses:**
      - **400 Bad Request:** For an invalid request body.
@@ -169,9 +182,9 @@ Additionally, the Bank maintains its own key pair. Upon starting, the Bank regis
 
 ---
 
-## Ecosystem Applications
+## Demo Applications
 
-Ecosystem applications are implemented in various programming languages (Node.js, Golang, and Python) and are designed to interact with the underlying infrastructure. Each application is classified as either a payer or a payee—for demonstration purposes, each application will serve as one or the other, though in practice they may function as both.
+Demo applications are implemented in various programming languages (Node.js, Golang, and Python) and are designed to interact with the underlying infrastructure. Each application is classified as either a payer or a payee. For demonstration purposes, each application will serve primarily as one or the other, though in practice they may function as both.
 
 ### Payees
 
@@ -201,7 +214,7 @@ Payee applications provide services that require payment. Each incoming API call
 Sleeper is a Node.js REST application offering a sleep/delay service that charges a fee in proportion to the delay.
 
 - **Type:** Payee
-- **Identity:** The application’s registered name is `"sleeper"`.
+- **Identity:** The application's registered name is `"sleeper"`.
 
 #### Endpoint: Sleep
 
@@ -237,7 +250,7 @@ Sleeper is a Node.js REST application offering a sleep/delay service that charge
 Greeter is a Golang REST application offering greeting services. It provides two endpoints – one for a greeting message and one for a farewell – with fees determined by the length of the provided name.
 
 - **Type:** Payee
-- **Identity:** The application’s registered name is `"greeter"`.
+- **Identity:** The application's registered name is `"greeter"`.
 
 #### Endpoints
 
@@ -253,7 +266,7 @@ Greeter is a Golang REST application offering greeting services. It provides two
 
    - **Behavior:**
      - Apply the standard payee processing behavior (validate payment headers, microledger operations, etc.).
-     - Return a greeting (for example, “Hello, {name}!”).
+     - Return a greeting (e.g., “Hello, {name}!”).
      - Charge $1 per character in the provided name.
      - Follow the standard payee validation and microledger operations.
 
@@ -272,11 +285,14 @@ Greeter is a Golang REST application offering greeting services. It provides two
      GET /goodbye?name={name}
      ```
 
+   - **Query Parameter:**
+     - `name` (required): The text or name for the farewell message.
+
    - **Behavior:**
      - Apply the standard payee processing behavior (validate payment headers, microledger operations, etc.).
      - Return a farewell message (e.g., “Goodbye, {name}!”).
      - Charge $1 per character in the provided name.
-     - Implement the standard payee validation and microledger operations.
+     - Perform standard payee validation and microledger operations.
 
    - **Error Handling (Both Endpoints):**
      - **400 Bad Request:** If the `name` parameter is missing.
@@ -288,7 +304,7 @@ Greeter is a Golang REST application offering greeting services. It provides two
 The Agent is implemented as a Python script that leverages LangChain and OpenAI. Its purpose is to parse a given instruction string into actionable steps and dynamically invoke either the Sleeper or Greeter endpoints based on those instructions.
 
 - **Type:** Payer
-- **Identity:** The application’s registered name is `"agent"`.
+- **Identity:** The application's registered name is `"agent"`.
 
 #### Behavior
 
@@ -299,7 +315,7 @@ The Agent is implemented as a Python script that leverages LangChain and OpenAI.
 - **Processing:**
   - Parse the instruction into a series of actionable steps.
   - Dynamically determine which external service to invoke:
-    - If greetings (hi or hello) are required, call Greeter’s `/hello` endpoint.
+    - If a greeting (hi or hello) is required, call Greeter’s `/hello` endpoint.
     - For farewells, call Greeter’s `/goodbye` endpoint.
     - For pauses, call Sleeper’s `/sleep` endpoint.
   - Use LangChain and the OpenAI API to determine the best tool to invoke.
@@ -307,10 +323,7 @@ The Agent is implemented as a Python script that leverages LangChain and OpenAI.
   - Each API call includes the required payment headers as described above.
 
 - **Output:**
-  - The script prints detailed logs or returns a JSON object that outlines every step executed, including the fee charged for each transaction.
-
-- **Extensibility:**
-  - Ensure that the decision logic is modular and straightforward so that adding new ecosystem applications in the future requires minimal adjustments.
+  - The script prints detailed logs or returns a JSON object that outlines every executed step, including the fee charged for each transaction.
 
 ---
 
@@ -318,7 +331,7 @@ The Agent is implemented as a Python script that leverages LangChain and OpenAI.
 
 ## Microledger Specification
 
-This section provides a formal specification for a microledger, a self-contained, immutable, append-only log inspired by Event Sourcing and Blockchain principles. A reference Java implementation is provided below, and alternative language implementations must adhere to this guide closely. Any deviation must be explicitly documented in the source code.
+This section provides a formal specification for a microledger: a self-contained, immutable, append-only log inspired by event sourcing and blockchain principles. A reference Java implementation is provided below; alternative language implementations must adhere to this guide closely. Any deviation must be explicitly documented in the source code.
 
 ### Abstract
 
@@ -339,7 +352,7 @@ A microledger is constructed as a linked chain of blocks. Each block must contai
 
 #### Terminology
 
-- **Custodian:** An entity identified by a public key, DID, etc., serving as an owner and validator of a block.
+- **Custodian:** An entity identified by a public key, DID, etc., serving as the owner and validator of a block.
 - **Genesis Block:** The first block in a microledger that does not reference any previous block.
 - **Multisig:** A methodology requiring multiple custodial signatures to validate a block.
 - **SAI:** Self-Addressing Identifier.
@@ -354,7 +367,7 @@ A microledger is constructed as a linked chain of blocks. Each block must contai
   Each block is cryptographically chained to the previous one. Authenticity is ensured by verifying that every block’s digital fingerprint is correctly computed and that its signatures match the associated controlling identifiers.
 
 - **Composability:**
-  Microledgers are designed to be composable. New genesis blocks may be chained to existing chains if required.
+  Microledgers are designed to be composable. New genesis blocks may be chained to existing chains if necessary.
 
 - **Ownership Transfer:**
   The ownership of a block is defined by its custodians. To transfer ownership, the current custodians must anchor a new block containing updated controlling identifiers.
@@ -382,7 +395,7 @@ When transferring ownership:
 
 ### Reference Implementation in Java
 
-The following reference implementation in Java should serve as the canonical guide. Implementations in other languages must match its behavior and structure as closely as possible, and any differences must be clearly noted in the code comments.
+The following reference implementation in Java should serve as the canonical guide. Implementations in other languages must match its behavior and structure as closely as possible. Any differences must be clearly noted in the code comments.
 
 #### File: io.agentza.microledger.model.Block
 
@@ -642,27 +655,27 @@ The following tables list derivation codes for digital fingerprints, seals, and 
 
 **Digital Fingerprint Representation:**
 
-| Concept      | Code |
-|--------------|------|
-| SAI          | A    |
-| Multihash    | B    |
+| Concept   | Code |
+|-----------|------|
+| SAI       | A    |
+| Multihash | B    |
 
 **Seal Representation:**
 
-| Concept      | Code |
-|--------------|------|
-| SAI          | A    |
-| Multihash    | B    |
+| Concept   | Code |
+|-----------|------|
+| SAI       | A    |
+| Multihash | B    |
 
 **Controlling Identifiers Representation:**
 
-| Concept                                  | Code |
-|------------------------------------------|------|
-| Self-certifying basic prefix             | A    |
-| Self-certifying self-addressing prefix   | B    |
-| Self-certifying self-signing prefix      | C    |
-| DID:peer                                 | D    |
-| DID:web                                  | E    |
+| Concept                                | Code |
+|----------------------------------------|------|
+| Self-certifying basic prefix           | A    |
+| Self-certifying self-addressing prefix | B    |
+| Self-certifying self-signing prefix    | C    |
+| DID:peer                               | D    |
+| DID:web                                | E    |
 
 ---
 
@@ -673,7 +686,7 @@ The following tables list derivation codes for digital fingerprints, seals, and 
    - Each HTTP endpoint must perform strict signature and timestamp validation.
    - Use the Identity Registry for identity verification as needed.
 
-2. **Ecosystem Applications:**
+2. **Demo Applications:**
    - Use Node.js for Sleeper, Golang for Greeter, and Python for Agent.
    - All endpoints (or external API calls) must include fee calculations and proper microledger support.
    - The Agent must dynamically orchestrate calls using AI (via LangChain and OpenAI) based on parsed instructions.
@@ -683,5 +696,3 @@ The following tables list derivation codes for digital fingerprints, seals, and 
    - Follow the provided Java reference implementation closely.
    - Any deviations between language implementations must be explicitly noted in the code.
    - Ensure that block chaining, digital fingerprint calculation, and signature verification conform to the specification.
-
-Please use this refined prompt as the foundation for your implementation. Any future modifications—such as adding new business operations or external API calls—must remain aligned with the overall structure and security principles detailed herein.
