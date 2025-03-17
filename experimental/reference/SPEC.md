@@ -256,18 +256,54 @@ Payee applications provide services that require payment. Each incoming API call
              "value": "<caller signature>"
            }
          ],
-        "sealAttachments": [
-          {
-            "name": "allowance",
-            "value": "base64 encoded Allowance JSON object"
-          }
-        ]
+         "sealAttachments": [
+           {
+             "name": "allowance",
+             "value": "base64 encoded Allowance JSON object"
+           }
+         ]
        }
        ```
-     - Example `Allowance` JSON object
+     - Example `Allowance` JSON object:
      ```json
         {
            "maxCharge": 10,
+           "currency": "USD"
+         }
+     ```
+
+- **`X-Fee`:** A base64 encoded Block representing the fee charged by the callee for processing the request. This Block must include a Seal Attachment element with a `fee` JSON object that contains metadata about the fee charged (e.g., fee amount and currency). This Block must be signed by the callee.
+  *Decoded Example:*
+       ```json
+       {
+         "blockNumber": 3,
+         "previousBlockHash": "<computed hash from previous block>",
+         "digitalFingerprint": "<computed hash>",
+         "timeImprint": "<ISO-8601 timestamp>",
+         "seals": [
+           {
+             "sealType": "SHA-256",
+             "sealValue": "<hash computed over the fee payload>"
+           }
+         ],
+         "signatures": [
+           {
+             "algorithm": "RSA",
+             "value": "<callee signature>"
+           }
+         ],
+         "sealAttachments": [
+           {
+             "name": "fee",
+             "value": "base64 encoded Fee JSON object"
+           }
+         ]
+       }
+       ```
+     - Example `Fee` JSON object:
+     ```json
+        {
+           "feeCharged": 5,
            "currency": "USD"
          }
      ```
@@ -284,10 +320,6 @@ Payee applications provide services that require payment. Each incoming API call
 - If the request succeeds, the callee appends the `X-Allowance` block to the end of the local microledger, followed by the `X-Fee` block. The caller does the same.
 - Subsequent requests between the same caller and callee will only include the original genesis block (`X-Proof-of-Funds`) and the latest `X-Allowance` (in the request) and `X-Fee` (in the response). It is up to the caller and callee to maintain their own representation of the microledger and ensure it remains valid.
 
-- **Decoded Response Header Examples:**
-
-     - For `X-Allowance` the decoded value example should be:
-    TODO document the fee header, as well as the fee json object in the same way that the allowance header was documented.
 ---
 
 ### Sleeper
@@ -589,8 +621,17 @@ public class Seal {
 package io.agentza.microledger.model;
 
 public class SealAttachment {
+    private String name;  // Name of the attachment (e.g., "allowance", "fee")
+    private String value; // Base64 encoded value of the attachment
 
-    // TODO Implement this class
+    public SealAttachment() {}
+
+    public SealAttachment(String name, String value) {
+        this.name = name;
+        this.value = value;
+    }
+
+    // Getters and setters...
 }
 ```
 
